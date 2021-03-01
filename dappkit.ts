@@ -12,7 +12,11 @@ import {
   SignTxResponseSuccess,
   TxToSignParam,
 } from '@celo/utils';
-import Linking from './linking';
+
+// TODO: investigate tradeoffs of custom linking lib vs. react native dep
+
+// import Linking from './linking';
+import { Linking } from 'react-native';
 export {
   AccountAuthRequest,
   DappKitRequestMeta,
@@ -20,12 +24,14 @@ export {
   SignTxRequest,
 } from '@celo/utils';
 
-const localStorageKey = 'use-contractkit/dappkit';
+const localStorageKey = 'dappkit-web';
 // hack to get around dappkit issue where new tabs are opened
 // and the url hash state is not respected (Note this implementation
 // of dappkit doesn't use URL hashes to always force the newtab experience).
 if (typeof window !== 'undefined') {
   const params = new URL(window.location.href).searchParams;
+  console.log("params: ", JSON.stringify(params))
+  console.log(window.location.href)
   if (params.get('type') && params.get('requestId')) {
     localStorage.setItem(localStorageKey, window.location.href);
     window.close();
@@ -34,6 +40,9 @@ if (typeof window !== 'undefined') {
 
 async function waitForResponse() {
   while (true) {
+    console.log("Entered waitForResponse");
+    // console.log(localStorage)
+    // console.log("JSON localStorage: ", JSON.stringify(localStorage))
     const value = localStorage.getItem(localStorageKey);
     console.log('Poll', value);
     if (value) {
@@ -47,8 +56,10 @@ async function waitForResponse() {
 export async function waitForAccountAuth(
   requestId: string
 ): Promise<AccountAuthResponseSuccess> {
+  console.log("Entered waitForAccountAuth")
   const url = await waitForResponse();
   const dappKitResponse = parseDappkitResponseDeeplink(url);
+  console.log("dappKitResponse: ", JSON.stringify(dappKitResponse))
   if (
     requestId === dappKitResponse.requestId &&
     dappKitResponse.type === DappKitRequestTypes.ACCOUNT_ADDRESS &&
@@ -80,8 +91,11 @@ export async function waitForSignedTxs(
 }
 
 export function requestAccountAddress(meta: DappKitRequestMeta) {
+  console.log("Entering requestAccountAddress");
   const deepLink = serializeDappKitRequestDeeplink(AccountAuthRequest(meta));
+  console.log("deepLink: ", deepLink)
   Linking.openURL(deepLink);
+  console.log("Leaving requestAccountAddress");
 }
 
 export enum FeeCurrency {

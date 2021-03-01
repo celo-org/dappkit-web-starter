@@ -4,7 +4,7 @@
     "slug": "expo-test-project",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "myapp",
+    "scheme": "celodappkit",
     "userInterfaceStyle": "automatic",
     "splash": {
       "resizeMode": "contain",

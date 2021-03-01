@@ -34,11 +34,14 @@ class Linking {
     if (isIphone == true) {
       let app = {
         launchApp: function () {
-          setTimeout(function () {
-            window.location.href =
-              'https://itunes.apple.com/us/app/appname/appid';
-          }, 25);
-          window.location.href = url; //which page to open(now from mobile, check its authorization)
+          // setTimeout(function () {
+          //   window.location.href =
+          //     'https://itunes.apple.com/us/app/appname/appid';
+          // }, 25);
+          // window.location.href = url; //which page to open(now from mobile, check its authorization)
+
+          // TODO: do we need other special handling here?
+          window.open(url);
         },
         openWebApp: function () {
           window.location.href =

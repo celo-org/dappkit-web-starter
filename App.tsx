@@ -6,13 +6,10 @@ import {
   requestAccountAddress,
   waitForAccountAuth,
   // FeeCurrency
-} from '@celo/dappkit'
+// } from '@celo/dappkit'
 
 // TODO: this uses the local "web DappKit" but does not work as a drop-in replacement yet
-// } from './dappkit'
-// import * as Linking from './linking'
-
-import * as Linking from 'expo-linking'
+} from './dappkit'
 
 export default class App extends React.Component {
   state = {
@@ -29,18 +26,17 @@ export default class App extends React.Component {
     const dappName = 'Web DappKit'
 
     // The deeplink that the Celo Wallet will use to redirect the user back to the DApp with the appropriate payload.
-    const callback = Linking.makeUrl('/')
+    console.log(JSON.stringify(location))
 
     // Ask the Celo Alfajores Wallet for user info
     requestAccountAddress({
       requestId,
-      dappName,
-      callback,
+      dappName: dappName,
+      callback: window.location.href,
     })
 
     // Wait for the Celo Wallet response
     const dappkitResponse = await waitForAccountAuth(requestId)
-
     // TODO: this should work, and update the address displayed in the component
     // Update state
     this.setState({
