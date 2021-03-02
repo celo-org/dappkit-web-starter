@@ -1,4 +1,4 @@
-import { ContractSendMethod, CeloTx } from '@celo/connect';
+import { ContractSendMethod } from '@celo/connect';
 import { CeloContract, ContractKit } from '@celo/contractkit';
 import {
   AccountAuthRequest,
@@ -28,21 +28,24 @@ const localStorageKey = 'dappkit-web';
 // hack to get around dappkit issue where new tabs are opened
 // and the url hash state is not respected (Note this implementation
 // of dappkit doesn't use URL hashes to always force the newtab experience).
+
+// TODO Reinvestigate this regarding chrome vs. iOS differences -- may need to add handling here to close tabs on certain OSs, open new tabs, etc.
 if (typeof window !== 'undefined') {
+  console.log("In the first block of dappkit-web")
   const params = new URL(window.location.href).searchParams;
-  console.log("params: ", JSON.stringify(params))
-  console.log(window.location.href)
+  console.log("params: ", params.toString())
   if (params.get('type') && params.get('requestId')) {
+    console.log("Setting window location in storage")
     localStorage.setItem(localStorageKey, window.location.href);
+    // TODO: seems like the below line is not getting executed in Chrome on iOS
+    // on iOS though, the newly opened window gets closed and the following window (instead of the previously opened tab) gets opened
     window.close();
   }
 }
 
 async function waitForResponse() {
+  console.log("Entered waitForResponse");
   while (true) {
-    console.log("Entered waitForResponse");
-    // console.log(localStorage)
-    // console.log("JSON localStorage: ", JSON.stringify(localStorage))
     const value = localStorage.getItem(localStorageKey);
     console.log('Poll', value);
     if (value) {
@@ -90,6 +93,7 @@ export async function waitForSignedTxs(
   throw new Error('Unable to parse Valora response');
 }
 
+// TODO import this directly from dappkit?
 export function requestAccountAddress(meta: DappKitRequestMeta) {
   console.log("Entering requestAccountAddress");
   const deepLink = serializeDappKitRequestDeeplink(AccountAuthRequest(meta));
@@ -117,44 +121,52 @@ async function getFeeCurrencyContractAddress(
   }
 }
 
+// TODO import directly from dappkit (once expo dep is gone)
+export interface TxParams {
+  tx: ContractSendMethod
+  from: string
+  to?: string
+  feeCurrency?: FeeCurrency
+  estimatedGas?: number
+  value?: string
+}
+
 export async function requestTxSig(
   kit: ContractKit,
-  txParams: CeloTx[],
+  txParams: TxParams[],
   meta: DappKitRequestMeta
 ) {
   // TODO: For multi-tx payloads, we for now just assume the same from address for all txs. We should apply a better heuristic
-  // @ts-ignore
-  const baseNonce = await kit.connection.nonce(txParams[0].from);
-  const txs = await Promise.all(
-    txParams.map(async (txParam: any, index: number) => {
-      const feeCurrency = txParam.feeCurrency
-        ? txParam.feeCurrency
-        : FeeCurrency.cGLD;
-      const feeCurrencyContractAddress = await getFeeCurrencyContractAddress(
-        kit,
-        feeCurrency
-      );
-
-      const value = txParam.value === undefined ? '0' : txParam.value;
+  const baseNonce = await kit.connection.nonce(txParams[0].from)
+  const txs: TxToSignParam[] = await Promise.all(
+    txParams.map(async (txParam, index) => {
+      const feeCurrency = txParam.feeCurrency ? txParam.feeCurrency : FeeCurrency.cGLD
+      const feeCurrencyContractAddress = await getFeeCurrencyContractAddress(kit, feeCurrency)
+      const value = txParam.value === undefined ? '0' : txParam.value
 
       const estimatedTxParams = {
         feeCurrency: feeCurrencyContractAddress,
         from: txParam.from,
         value,
-      } as any;
-      const estimatedGas = 50000;
+      } as any
+      const estimatedGas =
+        txParam.estimatedGas === undefined
+          ? await txParam.tx.estimateGas(estimatedTxParams)
+          : txParam.estimatedGas
+
       return {
-        txData: txParam.data, // Valora expects this
+        txData: txParam.tx.encodeABI(),
         estimatedGas,
         nonce: baseNonce + index,
-        feeCurrencyAddress: undefined,
+        feeCurrencyAddress: feeCurrencyContractAddress,
         value,
         ...txParam,
-      };
+      }
     })
-  );
-  console.log(JSON.stringify(txs));
-  const request = SignTxRequest(txs, meta);
+  )
+  const request = SignTxRequest(txs, meta)
 
-  Linking.openURL(serializeDappKitRequestDeeplink(request));
+  Linking.openURL(serializeDappKitRequestDeeplink(request))
 }
+
+
