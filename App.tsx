@@ -7,10 +7,9 @@ import {
   waitForAccountAuth,
   FeeCurrency,
   parseURLOnRender,
-// } from '@celo/dappkit'
-
-// TODO: this uses the local "web DappKit" but does not work as a drop-in replacement yet
+// TODO replace with @celo/dappkit/lib/web once published
 } from './dappkit/src/web'
+
 import { newKitFromWeb3 } from "@celo/contractkit";
 import { toTxResult } from "@celo/connect"
 import Web3 from 'web3';
