@@ -5,26 +5,28 @@ import {
   waitForSignedTxs,
   requestAccountAddress,
   waitForAccountAuth,
-  FeeCurrency
+  FeeCurrency,
+  parseURLOnRender,
 // } from '@celo/dappkit'
 
 // TODO: this uses the local "web DappKit" but does not work as a drop-in replacement yet
-} from './dappkit'
+} from './dappkit/src/web'
 import { newKitFromWeb3 } from "@celo/contractkit";
 import { toTxResult } from "@celo/connect"
 import Web3 from 'web3';
-
 
 // set up ContractKit
 // testnet
 export const web3 = new Web3('https://alfajores-forno.celo-testnet.org');
 // // mainnet
 // export const web3 = new Web3('https://forno.celo.org');
+
+// @ts-ignore
 export const kit = newKitFromWeb3(web3);
-const transferToAccount = "0xbe3908aCEC362AF0382ebc56E06b82ce819b19E8";
 
 export default class App extends React.Component {
   state = {
+    status: null,
     address: null,
     phoneNumber: null,
   }
@@ -44,14 +46,22 @@ export default class App extends React.Component {
     })
 
     // Wait for the Celo Wallet response
-    const dappkitResponse = await waitForAccountAuth(requestId)
+    try {
+      const dappkitResponse = await waitForAccountAuth(requestId)
+      this.setState({
+        status: "Login succeeded",
+        address: dappkitResponse.address,
+        phoneNumber: dappkitResponse.phoneNumber,
+        loggedIn: true,
+      })  
+    } catch (error) {
+      console.log(error)
+      this.setState({
+        status: "Login timed out, try again: " + error.strin,
+      })
+    }
     // TODO: this should work, and update the address displayed in the component
     // Update state
-    this.setState({
-      address: dappkitResponse.address,
-      phoneNumber: dappkitResponse.phoneNumber,
-      loggedIn: true,
-    })
   }
 
   transfer = async () => {
@@ -59,8 +69,10 @@ export default class App extends React.Component {
       console.log("Entering transfer")
       const requestId = 'transfer';
       const dappName = 'Hello Celo';
-      // Create a transaction object to update the contract with the 'textInput'
-      // const txObject = await this.state.helloWorldContract.methods.setName(this.state.textInput)
+      // Replace with your own account address
+      const transferToAccount = "0xbe3908aCEC362AF0382ebc56E06b82ce819b19E8";
+
+      // Create a transaction object using ContractKit
       const stableToken = await kit.contracts.getStableToken();
       const txObject = stableToken.transfer(transferToAccount, "1").txo;
       // Send a request to the Celo wallet to send an update transaction to the HelloWorld contract
@@ -80,23 +92,30 @@ export default class App extends React.Component {
         ],
         { requestId, dappName, callback: window.location.href }
       )
-  
       // Get the response from the Celo wallet
       const dappkitResponse = await waitForSignedTxs(requestId)
       const tx = dappkitResponse.rawTxs[0]
       console.log(tx)
       let result = await toTxResult(kit.web3.eth.sendSignedTransaction(tx)).waitReceipt()
-      console.log(`Tx receipt: `, result)
+      console.log("Tx receipt: ", result)
+      this.setState({
+        status: "transfer succeeded with receipt: " + result.transactionHash,
+      })
     }
   }
 
   render(){
+    // This circumvents new tab behavior
+    parseURLOnRender()
+    console.log("rendering")
     return (
       <View style={styles.container}>
-      <Button title="Connect to Wallet" onPress={()=> this.login()} />
-        <Text style={styles.title}>Address: {this.state.address}</Text>
-        <Text style={styles.title}>Phone number: {this.state.phoneNumber}</Text>
-      {this.state.address? <Button title="Transfer" onPress={()=> this.transfer()} /> : <></>}
+        <Text style={styles.title}>Dummy Web DApp</Text>
+        <Button title="Connect to Valora" onPress={()=> this.login()} />
+        <Text style={styles.text}>Status: {this.state.status}</Text>
+        <Text style={styles.text}>Address: {this.state.address}</Text>
+        <Text style={styles.text}>Phone number: {this.state.phoneNumber}</Text>
+        {this.state.address? <Button title="Transfer" onPress={()=> this.transfer()} /> : <></>}
       </View>
     );
   }
@@ -111,6 +130,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    padding: 10,
+  },
+  text: {
+    fontSize: 16,
+    padding: 5,
   },
   separator: {
     marginVertical: 30,
