@@ -56,7 +56,7 @@ export default class App extends React.Component {
     } catch (error) {
       console.log(error)
       this.setState({
-        status: "Login timed out, try again: " + error.strin,
+        status: "Login timed out, try again: " + error.string,
       })
     }
     // TODO: this should work, and update the address displayed in the component
