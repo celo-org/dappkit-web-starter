@@ -6,9 +6,7 @@ import {
   requestAccountAddress,
   waitForAccountAuth,
   FeeCurrency,
-  parseURLOnRender,
-// TODO replace with @celo/dappkit/lib/web once published
-} from './dappkit/src/web'
+} from '@celo/dappkit/lib/web'
 
 import { newKitFromWeb3 } from "@celo/contractkit";
 import { toTxResult } from "@celo/connect"
@@ -52,16 +50,14 @@ export default class App extends React.Component {
         address: dappkitResponse.address,
         phoneNumber: dappkitResponse.phoneNumber,
         loggedIn: true,
-      })  
+      })
+    // Catch possible timeout errors
     } catch (error) {
       console.log(error)
       this.setState({
         status: "Login timed out, try again: " + error.string,
       })
-    }
-    // TODO: this should work, and update the address displayed in the component
-    // Update state
-  }
+    }  }
 
   transfer = async () => {
     if (this.state.address) {
@@ -104,9 +100,6 @@ export default class App extends React.Component {
   }
 
   render(){
-    // This circumvents new tab behavior
-    parseURLOnRender()
-    console.log("rendering")
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Dummy Web DApp</Text>
