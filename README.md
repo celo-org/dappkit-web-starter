@@ -1,4 +1,4 @@
-# Expo Web Dapp
+# DappKit Web Starter (With Expo)
 
 This is an example base for building a web DApp on Celo using Expo. This is heavily based on [Celo Truffle Box](https://github.com/critesjosh/celo-dappkit) but adapted for web DApps using Expo.
 
@@ -10,6 +10,7 @@ Please see `App.tsx` for an example flow including connecting to the Alfajores W
 
 - Go through the [Celo Truffle Box](https://github.com/critesjosh/celo-dappkit) tutorial
 - Make sure the [Celo Wallet](https://celo.org/developers/wallet) is installed on your mobile device to sign transactions
+- Install the Expo CLI for additional functionality, via `npm install -g expo-cli`
 
 [Optional] Go to `App.tsx` and fill in your own Alfajores account address if desired.
 
