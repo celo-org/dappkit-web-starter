@@ -6,16 +6,17 @@ import {
   requestAccountAddress,
   waitForAccountAuth,
   FeeCurrency,
+  // Ensure that we are importing the functions from dappkit/lib/web
 } from '@celo/dappkit/lib/web'
 
 import { newKitFromWeb3 } from "@celo/contractkit";
-import { toTxResult } from "@celo/connect"
+import { toTxResult } from "@celo/connect";
 import Web3 from 'web3';
 
-// set up ContractKit
+// set up ContractKit, using forno as a provider
 // testnet
 export const web3 = new Web3('https://alfajores-forno.celo-testnet.org');
-// // mainnet
+// mainnet -- comment out the above, uncomment below for mainnet
 // export const web3 = new Web3('https://forno.celo.org');
 
 // @ts-ignore
@@ -51,7 +52,7 @@ export default class App extends React.Component {
         phoneNumber: dappkitResponse.phoneNumber,
         loggedIn: true,
       })
-    // Catch possible timeout errors
+    // Catch and handle possible timeout errors
     } catch (error) {
       console.log(error)
       this.setState({
@@ -64,20 +65,20 @@ export default class App extends React.Component {
       console.log("Entering transfer")
       const requestId = 'transfer';
       const dappName = 'Hello Celo';
-      // Replace with your own account address
+
+      // Replace with your own account address and desired value in WEI to transfer
       const transferToAccount = "0xbe3908aCEC362AF0382ebc56E06b82ce819b19E8";
+      const transferValue = "1";
 
       // Create a transaction object using ContractKit
       const stableToken = await kit.contracts.getStableToken();
-      const txObject = stableToken.transfer(transferToAccount, "1").txo;
+      const txObject = stableToken.transfer(transferToAccount, transferValue).txo;
+
       // Send a request to the Celo wallet to send an update transaction to the HelloWorld contract
-      console.log(txObject)
-      console.log(this.state.address)
       requestTxSig(
         kit,
         [
           {
-            // TODO: fix this type error in a more robust way --> specify the ContractSendMethod funcs needed
             // @ts-ignore
             tx: txObject,
             from: this.state.address!,
@@ -87,15 +88,26 @@ export default class App extends React.Component {
         ],
         { requestId, dappName, callback: window.location.href }
       )
+
       // Get the response from the Celo wallet
       const dappkitResponse = await waitForSignedTxs(requestId)
       const tx = dappkitResponse.rawTxs[0]
-      console.log(tx)
-      let result = await toTxResult(kit.web3.eth.sendSignedTransaction(tx)).waitReceipt()
-      console.log("Tx receipt: ", result)
-      this.setState({
-        status: "transfer succeeded with receipt: " + result.transactionHash,
-      })
+
+      // Wait for transaction result and handle possible timeout and transaction failures
+      let status;
+      try {
+        let result = await toTxResult(kit.web3.eth.sendSignedTransaction(tx)).waitReceipt()
+        if (result.status) {
+          status = "transfer succeeded with receipt: " + result.transactionHash;
+        } else {
+          console.log(JSON.stringify(result))
+          status = "failed to send transaction"
+        }
+      } catch (error) {
+        console.log(error)
+        status = "transaction signing timed out, try again: " + error.string;
+      }
+      this.setState({status: status})
     }
   }
 
