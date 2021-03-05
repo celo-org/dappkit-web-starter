@@ -56,7 +56,7 @@ export default class App extends React.Component {
     } catch (error) {
       console.log(error)
       this.setState({
-        status: "Login timed out, try again: " + error.string,
+        status: "Login timed out, try again.",
       })
     }  }
 
@@ -90,22 +90,25 @@ export default class App extends React.Component {
       )
 
       // Get the response from the Celo wallet
-      const dappkitResponse = await waitForSignedTxs(requestId)
-      const tx = dappkitResponse.rawTxs[0]
-
-      // Wait for transaction result and handle possible timeout and transaction failures
-      let status;
+      // Wait for signed transaction object and handle possible timeout
+      let tx;
       try {
-        let result = await toTxResult(kit.web3.eth.sendSignedTransaction(tx)).waitReceipt()
-        if (result.status) {
-          status = "transfer succeeded with receipt: " + result.transactionHash;
-        } else {
-          console.log(JSON.stringify(result))
-          status = "failed to send transaction"
-        }
+        const dappkitResponse = await waitForSignedTxs(requestId)
+        tx = dappkitResponse.rawTxs[0]
       } catch (error) {
         console.log(error)
-        status = "transaction signing timed out, try again: " + error.string;
+        this.setState({status: "transaction signing timed out, try again."})
+        return
+      }
+
+      // Wait for transaction result and check for success
+      let status;
+      const result = await toTxResult(kit.web3.eth.sendSignedTransaction(tx)).waitReceipt()
+      if (result.status) {
+        status = "transfer succeeded with receipt: " + result.transactionHash;
+      } else {
+        console.log(JSON.stringify(result))
+        status = "failed to send transaction"
       }
       this.setState({status: status})
     }
