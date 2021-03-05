@@ -8,15 +8,13 @@ Please see `App.tsx` for an example flow including connecting to the Alfajores W
 
 ## Prerequisites
 
-- Go through the [Celo Truffle Box](https://github.com/critesjosh/celo-dappkit) tutorial
+- Go through the [Celo Truffle Box](https://github.com/critesjosh/celo-dappkit) tutorial. This includes installing the Expo CLI (via `npm install -g expo-cli`), the [Yarn package manager](https://yarnpkg.com/), and **are using Node.js version 10.x**
 - Make sure the [Celo Wallet](https://celo.org/developers/wallet) is installed on your mobile device to sign transactions
-- Install the Expo CLI for additional functionality, via `npm install -g expo-cli`
-
-[Optional] Go to `App.tsx` and fill in your own Alfajores account address if desired.
+- [Optional] Go to `App.tsx` and fill in your own Alfajores account address if desired.
 
 ## Running & Development
 
-Run:
+After cloning the repository, navigate into the root of the repo (`cd dappkit-web-starter`) and run:
 
 ```sh
 yarn && yarn web
