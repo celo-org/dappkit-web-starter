@@ -10,7 +10,6 @@ import {
 } from '@celo/dappkit/lib/web'
 
 import { newKitFromWeb3 } from "@celo/contractkit";
-import { toTxResult } from "@celo/connect";
 import Web3 from 'web3';
 
 // set up ContractKit, using forno as a provider
@@ -76,6 +75,7 @@ export default class App extends React.Component {
 
       // Send a request to the Celo wallet to send an update transaction to the HelloWorld contract
       requestTxSig(
+        // @ts-ignore
         kit,
         [
           {
@@ -91,10 +91,10 @@ export default class App extends React.Component {
 
       // Get the response from the Celo wallet
       // Wait for signed transaction object and handle possible timeout
-      let tx;
+      let rawTx;
       try {
         const dappkitResponse = await waitForSignedTxs(requestId)
-        tx = dappkitResponse.rawTxs[0]
+        rawTx = dappkitResponse.rawTxs[0]
       } catch (error) {
         console.log(error)
         this.setState({status: "transaction signing timed out, try again."})
@@ -103,11 +103,13 @@ export default class App extends React.Component {
 
       // Wait for transaction result and check for success
       let status;
-      const result = await toTxResult(kit.web3.eth.sendSignedTransaction(tx)).waitReceipt()
-      if (result.status) {
-        status = "transfer succeeded with receipt: " + result.transactionHash;
+      const tx = await kit.connection.sendSignedTransaction(rawTx);
+      const receipt = await tx.waitReceipt();
+
+      if (receipt.status) {
+        status = "transfer succeeded with receipt: " + receipt.transactionHash;
       } else {
-        console.log(JSON.stringify(result))
+        console.log(JSON.stringify(receipt))
         status = "failed to send transaction"
       }
       this.setState({status: status})
